@@ -1,0 +1,8 @@
+#Node modules
+node_modules/
+
+#public tailwind css file
+public/
+
+#builds
+out/

@@ -1,0 +1,108 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "handler full schema",
+    "type": "object",
+    "properties": {
+        "rowNumber": {
+            "type": "integer"
+        },
+        "epaSiteId": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 15
+        },
+        "order": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "name": {
+            "type": "string",
+            "maxLength": 80
+        },
+        "siteAddress": {
+            "$ref": "#/definitions/Address"
+        },
+        "mailingAddress": {
+            "$ref": "#/definitions/Address"
+        },
+        "contact": {
+            "type": "object",
+            "properties": {
+                "phone": {
+                    "type": "object",
+                    "properties": {
+                        "number": {
+                            "type": "string",
+                            "maxLength": 12,
+                            "pattern": "^[0-9]{3}-[0-9]{3}-[0-9]{4}$",
+                            "errorMessage": {
+                                "pattern": "must be XXX-XXX-XXXX format"
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "email": {
+                    "type": "string",
+                    "maxLength": 100
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "required": [
+        "epaSiteId"
+    ],
+    "additionalProperties": false,
+    "definitions": {
+        "Address": {
+            "type": "object",
+            "properties": {
+                "streetNumber": {
+                    "type": "string",
+                    "maxLength": 12
+                },
+                "address1": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "address2": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "city": {
+                    "type": "string",
+                    "maxLength": 25
+                },
+                "state": {
+                    "$ref": "#/definitions/Locality"
+                },
+                "country": {
+                    "$ref": "#/definitions/Locality"
+                },
+                "zip": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "address1"
+            ],
+            "additionalProperties": false
+        },
+        "Locality": {
+            "description": "Used for passing and returning State and Country",
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2
+                }
+            },
+            "required": [
+                "code"
+            ],
+            "additionalProperties": false
+        }
+    }
+}

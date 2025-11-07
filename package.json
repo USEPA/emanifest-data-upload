@@ -1,0 +1,47 @@
+{
+  "name": "emanifest-data-upload",
+  "version": "1.0.0",
+  "main": "src/main/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "build:css": "tailwindcss -i src/renderer/input.css -o public/output.css",
+    "watch:css": "tailwindcss -i src/renderer/input.css -o public/output.css --watch"
+  },
+  "keywords": [],
+  "author": "Kyle Markley",
+  "license": "ISC",
+  "description": "import and submit manifest shipment data to e-Manifest API to begin electronic manifests",
+  "type": "module",
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-errors": "^3.0.0",
+    "ajv-formats": "^3.0.1",
+    "ajv-keywords": "^5.1.0",
+    "axios": "^1.11.0",
+    "electron-squirrel-startup": "^1.0.1",
+    "electron-store": "^10.1.0",
+    "just-validate": "^4.3.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.8.3",
+    "@electron-forge/maker-deb": "^7.9.0",
+    "@electron-forge/maker-rpm": "^7.9.0",
+    "@electron-forge/maker-squirrel": "^7.9.0",
+    "@electron-forge/maker-zip": "^7.9.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.9.0",
+    "@electron-forge/plugin-fuses": "^7.9.0",
+    "@electron/fuses": "^1.8.0",
+    "@tailwindcss/cli": "^4.1.13",
+    "daisyui": "^5.1.25",
+    "electron": "^37.5.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.13"
+  },
+  "config": {
+    "forge": "./forge.config.js"
+  }
+}

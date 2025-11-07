@@ -1,0 +1,83 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "manifest schema",
+    "type": "object",
+    "properties": {
+        "manifestId": {
+            "type": "integer"
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "Pending",
+                "Scheduled"
+            ],
+            "errorMessage": {
+                "enum": "value must be Pending or Scheduled"
+            }
+        },
+        "submissionType": {
+            "type": [
+                "string"
+            ],
+            "enum": [
+                "FullElectronic",
+                "Hybrid"
+            ],
+            "errorMessage": {
+                "enum": "value must be Hybrid or FullElectronic"
+            }
+        },
+        "emergencyResponsePhone": {
+            "type": "string",
+            "pattern": "^\\d{3}-\\d{3}-\\d{4}$",
+            "errorMessage": {
+                "pattern": "value must be ###-###-#### format"
+            }
+        },
+        "potentialShipDate": {
+            "type": "string",
+            "format": "date",
+            "errorMessage": {
+                "format": "value must be a date format"
+            }
+        },
+        "comments": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "handlerId": {
+                        "type": "string",
+                        "maxLength": 12
+                    },
+                    "label": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "handlerId",
+                    "label",
+                    "description"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "handlingInstructions": {
+            "type": "string",
+            "maxLength": 4000
+        }
+    },
+    "required": [
+        "manifestId",
+        "status",
+        "submissionType",
+        "emergencyResponsePhone"
+    ],
+    "additionalProperties": false
+}

@@ -1,0 +1,214 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "waste schema",
+    "type": "object",
+    "properties": {
+        "manifestId": {
+            "type": "integer"
+        },
+        "lineNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "errorMessage": {
+                "required": "lineNumber is required"
+            }
+        },
+        "dotHazardous": {
+            "type": "boolean",
+            "errorMessage": {
+                "type": "must be true or false",
+                "required": "dotHazardous is required"
+            }
+        },
+        "epaWaste": {
+            "type": "boolean",
+            "errorMessage": {
+                "type": "must be true or false",
+                "required": "epaWaste is required"
+            }
+        },
+        "description": {
+            "type": [
+                "string"
+            ],
+            "minLength": 1,
+            "maxLength": 500,
+            "errorMessage": {
+                "minLength": "must be at least one character",
+                "maxLength": "must be 500 characters or less",
+                "required": "description is required"
+            }
+        },
+        "idNumber": {
+            "type": [
+                "string"
+            ],
+            "minLength": 1,
+            "maxLength": 6
+        },
+        "containerNumber": {
+            "type": [
+                "integer"
+            ],
+            "minimum": 0,
+            "errorMessage": {
+                "required": "containerNumber is required"
+            }
+        },
+        "containerType": {
+            "type": [
+                "string"
+            ],
+            "enum": [
+                "BA",
+                "DT",
+                "CF",
+                "DW",
+                "CM",
+                "HG",
+                "CW",
+                "TC",
+                "CY",
+                "TP",
+                "DF",
+                "TT",
+                "DM"
+            ],
+            "errorMessage": {
+                "required": "containerType is required"
+            }
+        },
+        "quantity": {
+            "type": [
+                "integer"
+            ],
+            "minimum": 0,
+            "errorMessage": {
+                "required": "quantity is required"
+            }
+        },
+        "unitOfMeasurement": {
+            "type": [
+                "string"
+            ],
+            "enum": [
+                "P",
+                "T",
+                "K",
+                "M",
+                "G",
+                "L",
+                "Y",
+                "N"
+            ],
+            "errorMessage": {
+                "required": "unitOfMeasurement is required",
+                "enum": "not an allowed value"
+            }
+        },
+        "federalWasteCodes": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 6
+            }
+        },
+        "generatorWasteCodes": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 6
+            }
+        },
+        "tsdfWasteCodes": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 6
+            }
+        },
+        "txWasteCodes": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 8
+            }
+        },
+        "managementMethodCode": {
+            "type": [
+                "string"
+            ],
+            "maxLength": 4
+        },
+        "handlingInstructions": {
+            "type": "string",
+            "maxLength": 4000
+        },
+        "comments": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "handlerId": {
+                        "type": "string",
+                        "maxLength": 12
+                    },
+                    "label": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "handlerId",
+                    "label",
+                    "description"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "density": {
+            "type": [
+                "number",
+                "null"
+            ],
+            "minimum": 0,
+            "maximum": 999.99
+        },
+        "densityUnitOfMeasurement": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "minLength": 1,
+            "maxLength": 1,
+            "enum": [
+                "1",
+                "2",
+                null
+            ],
+            "errorMessage": {
+                "enum": "value must be '1' for lbs/gal or '2' for sg"
+            }
+        }
+    },
+    "required": [
+        "manifestId",
+        "lineNumber",
+        "dotHazardous",
+        "epaWaste",
+        "description",
+        "containerNumber",
+        "containerType",
+        "quantity",
+        "unitOfMeasurement"
+    ],
+    "additionalProperties": false
+}
