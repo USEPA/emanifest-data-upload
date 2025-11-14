@@ -57,12 +57,13 @@ async function validateWastes(wastes, validManifestIds) {
         }
 
         //manifestId validation
-        if (!validManifestIds.has(row.manifestId)) {
+        if (row.manifestId && !validManifestIds.has(row.manifestId)) {
             errors.push({
                 field: 'manifestId',
                 message: `manifestId ${row.manifestId} is not valid because it does not exist on the manifest tab.`
             })
         }
+
         if (errors.length > 0) {
             results.push({ row: index + 1, errors })
         }
@@ -94,7 +95,7 @@ async function validateHandlersBasic(handlers, validManifestIds) {
         }
 
         //manifestId validation
-        if (!validManifestIds.has(row.manifestId)) {
+        if (row.manifestId && !validManifestIds.has(row.manifestId)) {
             errors.push({
                 field: 'manifestId',
                 message: `manifestId ${row.manifestId} is not valid because it does not exist on the manifest tab.`
@@ -192,7 +193,6 @@ async function validateHandlersFull(handlers) {
 
         handlersList.forEach((handler) => {
             const valid = validate(handler)
-            console.log({ handler })
             if (!valid) {
                 results.push({
                     row: handler.rowNumber,
@@ -234,6 +234,7 @@ function validateManifestIds(manifestIds, tabData) {
     return missingIds
 }
 
+//custom formatting schema errors
 const wasteCodeProperties = ['federalWasteCodes', 'generatorWasteCodes', 'tsdfWasteCodes', 'txWasteCodes']
 function processSchemaErrors(errors) {
     return errors.map(err => {

@@ -1,11 +1,7 @@
 //build for all
 export async function buildBulkManifests(info, handlers, wastes) {
 
-    console.log('made it to build manifests')
-
     let manifests = []
-
-    console.log({ info, handlers, wastes })
 
     for (const item of info) {
         const manifestId = item.manifestId
@@ -20,7 +16,6 @@ export async function buildBulkManifests(info, handlers, wastes) {
 }
 
 export async function buildManifestAll(info, manifestHandlers, wastes) {
-    console.log({ info, manifestHandlers, wastes })
     const payload = {
         submissionType: info.submissionType,
         status: info.status,
@@ -156,7 +151,6 @@ const baseWasteLine = {
 
 async function setWasteLine(line) {
     let newLine = JSON.parse(JSON.stringify(baseWasteLine));
-    console.log(line)
 
     newLine.lineNumber = line.lineNumber
     newLine.dotHazardous = line.dotHazardous

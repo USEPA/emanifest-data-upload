@@ -1,7 +1,6 @@
-import axios from 'axios'
-
+import log from 'electron-log/main.js';
 import { getEnvironmentCredentials } from './credentials.js'
-import { getEnvironmentBaseURL } from './utils.js'
+import apiClient from './apiClient.js';
 
 const authEndpoint = '/rest/api/v1/auth/'
 
@@ -10,39 +9,31 @@ let tokenExpiration = null
 
 export async function getAuthToken() {
     if (cachedToken && tokenExpiration && Date.now() < tokenExpiration) {
-        console.log('using cached token')
+        log.info('using cached token');
         return cachedToken
     }
 
     const { apiId, apiKey } = await getEnvironmentCredentials()
 
-    const baseURL = await getEnvironmentBaseURL()
-
     if (apiId == '' || apiKey == '') {
-        console.error('no api id or key')
-        throw new Error('API ID or Key not added for environment')
+        log.error('no api id or key for environment')
+        throw new Error('Missing API credentials', { cause: { code: 'E_MissingApiCredentials' } })
     }
 
     try {
-        const authResponse = await axios.get(`${baseURL}${authEndpoint}${apiId}/${apiKey}`)
+        const authResponse = await apiClient.get(`${authEndpoint}${apiId}/${apiKey}`)
 
         cachedToken = authResponse.data.token
         tokenExpiration = new Date(authResponse.data.expiration)
 
         return cachedToken
     } catch (error) {
-        console.error(error)
-        if (error.response?.data) {
-            throw new Error (`Error authenticating with e-Manifest API - reason: ${error.response.data.message}`)
-        } else {
-            console.error(error)
-            throw new Error('Unknown authentication error')
-        }
+        throw error
     }
 }
 
 export function clearCachedToken() {
-    console.log('clearing cached token due to updated credentials or environment change')
+    log.info('clearing cached token due to updated credentials or environment change')
     cachedToken = null
     tokenExpiration = null
 }

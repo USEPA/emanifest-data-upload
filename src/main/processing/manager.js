@@ -5,6 +5,8 @@ import validation from './support/validate.js'
 import { submitRequestsToApi } from "../api/submitManifest.js"
 import { mergeErrorsByRow } from "./support/utils.js"
 
+import log from 'electron-log/main.js';
+
 export async function processSubmitBulkData(filePath) {
     try {
 
@@ -44,7 +46,6 @@ export async function processSubmitBulkData(filePath) {
 
         //3a. validate manifest tab
         const manifestSchemaErrors = await validation.validateManifestInfo(manifestProcessed)
-        console.log({ manifestSchemaErrors })
 
         const manifestErrors = mergeErrorsByRow(manifestSchemaErrors, manifestCustomErrors)
 
@@ -98,8 +99,6 @@ export async function processSubmitBulkData(filePath) {
         //5. submit to API
         const apiSubmitResponse = await submitRequestsToApi(manifestPayloads)
 
-        console.log(apiSubmitResponse)
-
         let results = {
             success: [],
             fail: []
@@ -109,7 +108,8 @@ export async function processSubmitBulkData(filePath) {
             if (item.result == 'Saved') {
                 results.success.push({
                     manifestId: item.manifestId,
-                    mtn: item.response.manifestTrackingNumber
+                    mtn: item.response.manifestTrackingNumber,
+                    response: item.response
                 })
             } else {
                 results.fail.push({
@@ -130,7 +130,30 @@ export async function processSubmitBulkData(filePath) {
         return { result: 'submitted', batchResult, results }
 
     } catch (error) {
-        console.error(error)
-        return { result: 'systemError', error: error.message }
+        //this handles all of the possible auth errors - the processing will stop if there is an auth failure and return to the renderer
+        log.error(error)
+        if (error.hasOwnProperty('cause')) {
+            if (error.cause.code === 'E_MissingApiCredentials') {
+                return {
+                    result: 'authErrors',
+                    error: 'API ID or Key are not set for the environment. Please add under API Settings.'
+                }
+            }
+            else if (error.cause.code === 'E_SecurityApiIdLocked') {
+                return {
+                    result: 'authErrors',
+                    error: 'API ID is locked. You need to reset it in RCRAInfo by generating a new key.'
+                }
+            }
+            else if (error.cause.code === 'E_SecurityApiInvalidCredentials' || 'E_SecurityApiInvalidStatus') {
+                return {
+                    result: 'authErrors',
+                    error: 'Invalid API credentials. Confirm and set API ID and Key for the environment. Otherwise generate a new key in RCRAInfo.'
+                }
+            }
+        }
+        else {
+            return { result: 'systemError', error: error.message }
+        }
     }
 }

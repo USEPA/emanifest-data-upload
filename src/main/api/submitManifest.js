@@ -1,7 +1,4 @@
-import axios from 'axios'
-
-import { getAuthToken } from './auth.js'
-import { getEnvironmentBaseURL } from './utils.js'
+import apiClient from './apiClient.js';
 
 const saveEndpoint = '/rest/api/v1/emanifest/manifest/save'
 
@@ -19,19 +16,10 @@ export async function submitRequestsToApi(payloads) {
 }
 
 export async function submitToApi(manifest) {
-    const baseURL = await getEnvironmentBaseURL()
-    let token
-    try {
-        token = await getAuthToken()
-    } catch (error) {
-        console.log(error)
-        throw error
-    }
 
     try {
-        const saveResponse = await axios.postForm(baseURL + saveEndpoint, { manifest: JSON.stringify(manifest.payload) }, {
+        const saveResponse = await apiClient.postForm(saveEndpoint, { manifest: JSON.stringify(manifest.payload) }, {
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'multipart/form-data'
             }
         })
@@ -42,18 +30,20 @@ export async function submitToApi(manifest) {
         }
 
     } catch (error) {
-        if (error.response?.data?.operationStatus == 'Failed') {
+        if (error.hasOwnProperty('cause')) {
+            throw error;
+        }
+        if (error.hasOwnProperty('operationStatus')) {
             return {
                 manifestId: manifest.manifestId,
                 result: 'apiValidationError',
-                response: error.response.data
+                response: error
             }
         } else {
-            console.error(error)
             return {
                 manifestId: manifest.manifestId,
                 result: 'unknownApiError',
-                error: 'There was an error connecting with the e-Manifest API. Please try again.'
+                error: 'There was an error submitting to the e-Manifest API. Please try again or check logs.'
             }
         }
     }

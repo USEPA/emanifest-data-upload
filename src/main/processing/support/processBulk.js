@@ -3,7 +3,6 @@ import { groupByKey } from './utils.js'
 export async function processBulkManifestInfo(data) {
     return data.map(row => {
         const { errors, results } = parseComments(row.comments);
-        console.log(errors)
         return {
             ...row,
             comments: results,

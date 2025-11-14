@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 XLSX.set_fs(fs);
 
+//read the workbook for a given file path
 export async function readWorkbook(filePath) {
     const workbook = XLSX.readFile(filePath, { cellDates: true, raw: false });
     return workbook
@@ -16,12 +17,4 @@ export async function getSheetData(workbook, sheetName) {
     const data = XLSX.utils.sheet_to_json(sheet)
     if (data.length == 0) throw new Error(`No data on the following sheet: ${sheetName}`)
     return data
-}
-
-//used for CSVs / single sheet files
-export async function getFirstSheet(workbook) {
-    const firstSheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[firstSheetName];
-    if (!sheet) throw new Error(`File is missing wastes`)
-    return XLSX.utils.sheet_to_json(sheet)
 }

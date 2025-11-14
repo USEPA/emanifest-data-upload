@@ -1,5 +1,3 @@
-import { getCurrentEnv } from '../main.js'
-
 export const endpoints = {
     dev: {
         baseURL: 'https://rcrainfodev.com/rcrainfo',
@@ -13,9 +11,4 @@ export const endpoints = {
         baseURL: 'https://rcrainfo.epa.gov/rcrainfoprod',
         loginURL: 'https://rcrainfo.epa.gov'
     }
-}
-
-export async function getEnvironmentBaseURL() {
-    const currentEnv = await getCurrentEnv()
-    return endpoints[currentEnv].baseURL
 }

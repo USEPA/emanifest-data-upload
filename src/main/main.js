@@ -1,22 +1,18 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, safeStorage } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
+//import Store from 'electron-store';
 import path from 'path'
 import { fileURLToPath } from 'url'
-import Store from 'electron-store';
-import { clearCachedToken } from './api/auth.js'
-import { endpoints } from './api/utils.js';
+import { environmentStore } from './api/environmentStore.js'
 import { processSubmitBulkData } from './processing/manager.js';
 import { saveCredentials, getEnvironmentCredentials } from './api/credentials.js';
+import { clearCachedToken } from './api/auth.js'
+import { endpoints } from './api/endpoints.js';
+import log from 'electron-log/main.js';
 
+log.initialize();
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-
-//used for environment URLs, user-supplied api credentials and data on UI
-const store = new Store({
-    defaults: {
-        env: 'preprod'
-    }
-})
 
 //get the current environment
 ipcMain.handle('settings:get-env', () => store.get('env'))
@@ -26,7 +22,7 @@ ipcMain.handle('settings:set-env', (_, env) => {
     if (!['dev', 'preprod', 'prod'].includes(env)) {
         throw new Error(`Invalid environment: ${env}`)
     }
-    store.set('env', env)
+    environmentStore.set('env', env)
     clearCachedToken()
     return env
 })
@@ -71,11 +67,6 @@ ipcMain.handle('submit-all-data', async (_, filePath) => {
         }
     }
 })
-
-//returns current api config
-export async function getCurrentEnv() {
-    return store.get('env')
-}
 
 //handles opening client side URLs in default browser
 ipcMain.on('open-url', (_, url) => {

@@ -54,7 +54,6 @@ async function updateApiElements(env) {
     const apiKey = document.getElementById('apiKey')
     const apiLink = document.getElementById('apiLink')
 
-
     apiId.value = apiCreds.apiId
     apiKey.value = apiCreds.apiKey
 
@@ -71,32 +70,28 @@ async function updateApiElements(env) {
 
 /**************************FORM SUBMISSION FUNCIONS *******************************************/
 
-
 async function handleAllSubmit(filePath) {
     if (!filePath) {
         showToast('Please select a XLSX file with data', 'error')
         return
     }
-    validateAndSubmit('xlsx', filePath)
+    validateAndSubmit(filePath)
 }
 
-
-
-async function validateAndSubmit(mode, filePath, formData) {
-    console.log(mode, filePath, formData)
+async function validateAndSubmit(filePath) {
     const loading = document.getElementById('loading')
 
     const apiSubmissionResultsModal = document.getElementById('apiSubmissionResultsModal');
     const errorModal = document.getElementById('errorModal');
     const errorModalTitle = document.getElementById('errorModalTitle')
     const errorSection = document.getElementById('errors')
-    const errorReport = document.getElementById('errorReport')
-    errorReport.innerHTML = ''
+    const reportOutput = document.getElementById('reportOutput')
+    reportOutput.innerHTML = ''
 
     loading.classList.remove('hidden')
     try {
         const submitData = await window.api.submitAllData(filePath)
-        console.log(submitData)
+
         if (submitData.result === 'submitted') {
             const successArray = submitData.results.success
             const failArray = submitData.results.fail
@@ -114,13 +109,17 @@ async function validateAndSubmit(mode, filePath, formData) {
             const successMtns = successArray.map(item => `${item.mtn} (${item.manifestId})`);
             document.getElementById('mtnsByid').textContent = successMtns.join(', ')
             apiSubmissionResultsModal.show();
-            if (failLength > 0) {
-                createErrorReport(failArray)
-            }
+
+            createReport([...failArray, ...successArray])
 
         } else if (submitData.result === 'validationErrors') {
             errorModalTitle.textContent = 'Excel File Data Validation Errors'
             errorSection.textContent = JSON.stringify(submitData.allErrors, null, 2)
+            errorModal.show();
+        }
+        else if (submitData.result === 'authErrors') {
+            errorModalTitle.textContent = 'Authentication Error with e-Manifest'
+            errorSection.textContent = JSON.stringify(submitData.error, null, 2)
             errorModal.show();
         }
         else {
@@ -137,7 +136,8 @@ async function validateAndSubmit(mode, filePath, formData) {
     }
 }
 
-function createErrorReport(items) {
+function createReport(items) {
+    const reportOutput = document.getElementById('reportOutput')
 
     items.forEach((item, index) => {
         // Create the main div element with your classes
@@ -158,6 +158,19 @@ function createErrorReport(items) {
         titleDiv.className = "collapse-title font-semibold";
         titleDiv.textContent = `manifestId: ${item.manifestId}`;
 
+        const statusBadge = document.createElement('span')
+        if (!item.mtn) {
+            statusBadge.className = 'badge badge-error ml-2'
+            statusBadge.textContent = 'Failed'
+
+        } else {
+            statusBadge.className = 'badge badge-success ml-2'
+            statusBadge.textContent = 'Saved'
+        }
+
+        titleDiv.insertAdjacentElement('beforeend', statusBadge)
+
+
         // Create content div
         const contentDiv = document.createElement('pre');
         contentDiv.className = "collapse-content text-sm";
@@ -169,7 +182,7 @@ function createErrorReport(items) {
         collapseDiv.appendChild(contentDiv);
 
         // Append the complete collapse div to the container
-        errorReport.appendChild(collapseDiv);
+        reportOutput.appendChild(collapseDiv);
     });
 }
 
@@ -199,15 +212,13 @@ function copyToClipboard(textToCopy) {
         console.log('Text copied to clipboard:', textToCopy);
     } catch (err) {
         console.error('Failed to copy text:', err);
-        // Fallback for older browsers or if permission is denied
-        fallbackCopyToClipboard(textToCopy);
     }
 }
 
 /********************* Initialization/Event Listeners *******************************************/
 document.addEventListener('DOMContentLoaded', async () => {
     let currentEnv
-   
+
     let selectedExcelFilePath
 
     //handles environment changes - only show dev link if operating in dev mode
@@ -250,11 +261,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateEnvironmentElements(currentEnv, true)
     })
 
-    /************************MAIN FORM ***********************************************/
+    /************************GitHub Links ***********************************************/
 
-    const gitHubErrorsLink = document.getElementById('gitHubErrorsLink')
-    gitHubErrorsLink.addEventListener("click", async () => {
-        await window.api.openUrl('https://github.com/USEPA/e-manifest')
+    const ghLinks = document.querySelectorAll('.gh-link')
+
+    ghLinks.forEach(link => {
+        link.addEventListener("click", async () => {
+            await window.api.openUrl('https://github.com/USEPA/emanifest-data-upload')
+        })
     })
 
     /********************SELECT XLSX SECTION **************************/
@@ -263,14 +277,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         selectedExcelFilePath = await window.api.selectExcelFile()
         document.getElementById('fileNameExcel').textContent = selectedExcelFilePath || 'No file selected'
     })
-    const gitHubLinkAll = document.getElementById('gitHubLinkAll')
-    gitHubLinkAll.addEventListener("click", async () => {
-        await window.api.openUrl('https://github.com/USEPA/e-manifest')
-    })
 
-    /********************SUBMIT DATA BUTTONS *************************/
-
-    //XLSX
+    /********************SUBMIT DATA BUTTON *************************/
     const submitAllBtn = document.getElementById('submitAllBtn')
     submitAllBtn.addEventListener('click', async () => {
         await handleAllSubmit(selectedExcelFilePath)

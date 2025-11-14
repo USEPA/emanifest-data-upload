@@ -13,7 +13,6 @@ export function groupByKey(array, key) {
 }
 
 export function mergeErrorsByRow(errorsSet1, errorsSet2) {
-    console.log({ errorsSet1, errorsSet2 })
 
     if (errorsSet1.length == 0) {
         return errorsSet2

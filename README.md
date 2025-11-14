@@ -3,6 +3,7 @@ This application uploads data from a Microsoft Excel workbook to EPA's e-Manifes
 
 ## Requirements
 NodeJS [Download](https://nodejs.org/en/download)
+Git [Download](https://git-scm.com/install/windows)
 
 ## Installation
 ```shell

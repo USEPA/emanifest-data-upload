@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html data-theme="corporate">
+
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="../../public/output.css">
@@ -60,9 +61,15 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <span>Download the Excel (XLSX) template and ensure provided data meets the specifications available on
-                    <span id="gitHubLinkAll" class="link">
-                        GitHub</span>.</span>
+                <div>Download the Excel (XLSX) template and ensure provided data meets the specifications available on
+                    <span class="gh-link link  inline-flex items-center"><span>GitHub </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="size-4">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        </svg>
+                    </span>
+                </div>
             </div>
             <div class="flex mt-3 mb-3">
 
@@ -79,7 +86,7 @@
 
         <div class="flex mt-3 gap-2 mb-3">
 
-            <button class="btn btn-soft btn-secondary ml-auto" id="fullReportBtn">Error Report<svg
+            <button class="btn btn-soft btn-secondary ml-auto" id="fullReportBtn">Toggle Full Report<svg
                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="size-6">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -90,17 +97,17 @@
         </div>
         <div id="fullReport" class="mt-2 bg-base-100 p-6 rounded-sm break-words">
             <div>
-                <h3 class="font-bold">Error Report from e-Manifest</h3>
-                <div id="errorReport" class="mt-2 mx-4"></div>
-                <pre id="reportOutput" class="mt-2 whitespace-pre-wrap text-sm text-gray-800"></pre>
+                <h3 class="font-bold">Full Report from e-Manifest</h3>
+                <div id="reportOutput" class="mt-2 mx-4"></div>
             </div>
         </div>
     </div>
 
     <div id="loading" class="hidden fixed inset-0 z-50">
         <div class="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-        <div class="absolute inset-0 flex items-center justify-center"> 
-         <span class="mr-2 font-bold">Validating and submitting data</span> <span class="loading loading-spinner loading-xl text-primary"></span>
+        <div class="absolute inset-0 flex items-center justify-center">
+            <span class="mr-2 font-bold">Validating and submitting data</span> <span
+                class="loading loading-spinner loading-xl text-primary"></span>
         </div>
     </div>
 
@@ -184,7 +191,8 @@
                     saved. </p>
                 <p id="mtnsByid"></p>
                 <br>
-                <p>To see any manifests that failed and their errors, close this popup and see the "Error Report
+                <p>To see a full report for your manifests, including errors and warnings, close this popup and see the
+                    "Full Report
                     from e-Manifest" section at the bottom of the page.
                 </p>
             </div>
@@ -212,8 +220,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <span>To learn more about error messages and how to resolve them go to <span id="gitHubErrorsLink"
-                            class="link">GitHub</span> </span>
+                    <span>To learn more about error messages and how to resolve them go to
+                        <span class="gh-link link  inline-flex items-center"><span>GitHub </span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="size-4">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                            </svg>
+                        </span>
                 </div>
             </div>
             <div class="mt-3">
@@ -221,7 +235,7 @@
                 <div class="bg-gray-800 text-gray-100 p-4 rounded-md overflow-x-auto">
                     <pre id="errors" class="font-mono text-sm whitespace-pre pl-4"></pre>
                 </div>
-                
+
             </div>
             <div class="modal-action">
                 <button type="button" class="btn" onclick="errorModal.close()">Close</button>
@@ -243,15 +257,30 @@
             </div>
             <div class="mt-3">
                 <p>Follow the below steps to get started:</p>
-                <ol class="list-decimal pl-5">
+                <ol class="list-decimal pl-8">
                     <li>Obtain API ID and Key from RCRAInfo</li>
                     <li>Add the API ID and Key under API Settings in this application</li>
-                    <li>Download the Excel data template from GitHub</li>
-                    <li>Export data from source system and populate in Excel template</li>
+                    <li>Download the Excel data template from
+                        <span class="gh-link link  inline-flex items-center"><span>GitHub </span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="size-4">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                            </svg>
+                        </span>
+                    </li>
+                    <li>Export data from source system and populate in Excel template ensuring it meets data
+                        specifications</li>
                     <li>Select the spreadsheet and submit data to create manifests</li>
                 </ol>
                 <br>
-                <p>Access GitHub site for additional help content.</p>
+                <p>Access <span class="gh-link link  inline-flex items-center"><span>GitHub </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="size-4">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        </svg>
+                    </span> site for additional help content.</p>
             </div>
             <div class="modal-action">
                 <button type="button" class="btn" onclick="helpModal.close()">Close</button>

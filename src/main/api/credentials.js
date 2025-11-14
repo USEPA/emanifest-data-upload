@@ -2,7 +2,7 @@
 import { safeStorage } from 'electron'
 import Store from 'electron-store';
 
-import { getCurrentEnv } from '../main.js'
+import { getCurrentEnv } from './environmentStore.js'
 
 const credStore = new Store({ name: 'credentials' })
 
