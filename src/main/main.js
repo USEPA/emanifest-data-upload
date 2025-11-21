@@ -1,5 +1,4 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
-//import Store from 'electron-store';
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { environmentStore } from './api/environmentStore.js'
@@ -8,6 +7,9 @@ import { saveCredentials, getEnvironmentCredentials } from './api/credentials.js
 import { clearCachedToken } from './api/auth.js'
 import { endpoints } from './api/endpoints.js';
 import log from 'electron-log/main.js';
+
+//const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY = process.env.MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY
+//const MAIN_WINDOW_WEBPACK_ENTRY = process.env.MAIN_WINDOW_WEBPACK_ENTRY
 
 log.initialize();
 
@@ -89,7 +91,7 @@ function createWindow() {
             nodeIntegration: false
         }
     })
-    win.loadFile(path.join(__dirname, '../renderer/index.html'))
+    win.loadURL(path.join(__dirname, '../renderer/index.html'))
 }
 app.whenReady().then(createWindow)
 

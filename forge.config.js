@@ -2,7 +2,7 @@
 //const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 //const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
-const config = {
+module.exports = {
   packagerConfig: {
     asar: true,
   },
@@ -14,10 +14,10 @@ const config = {
     }
   ],
   plugins: [
-    {
-      name: '@electron-forge/plugin-auto-unpack-natives',
-      config: {},
-    },
+      {
+        name: '@electron-forge/plugin-auto-unpack-natives',
+        config: {},
+      },
     // Fuses are used to enable/disable various Electron functionality ----------DISABED TEMP - only needed for production----------
     // at package time, before code signing the application
     /*new FusesPlugin({
@@ -31,5 +31,3 @@ const config = {
     }),*/
   ],
 };
-
-export default config;

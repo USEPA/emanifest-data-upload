@@ -139,24 +139,15 @@ async function validateAndSubmit(filePath) {
 function createReport(items) {
     const reportOutput = document.getElementById('reportOutput')
 
-    items.forEach((item, index) => {
-        // Create the main div element with your classes
-        const collapseDiv = document.createElement('div');
-        collapseDiv.className = "collapse collapse-arrow bg-base-100 border border-base-300";
+    items.forEach((item) => {
+       
+        const details = document.createElement('details');
+        details.className = "collapse collapse-arrow bg-base-100 border border-base-300";
+        details.name = "results-accordian";
 
-        // Create the radio input element
-        const radioInput = document.createElement('input');
-        radioInput.type = "radio";
-        radioInput.name = "my-accordion-2";
-        // Check the first item by default
-        if (index === 0) {
-            radioInput.checked = true;
-        }
-
-        // Create title div
-        const titleDiv = document.createElement('div');
-        titleDiv.className = "collapse-title font-semibold";
-        titleDiv.textContent = `manifestId: ${item.manifestId}`;
+        const summary = document.createElement('summary');
+        summary.className = "collapse-title font-semibold";
+        summary.textContent = `manifestId: ${item.manifestId}`
 
         const statusBadge = document.createElement('span')
         if (!item.mtn) {
@@ -168,21 +159,18 @@ function createReport(items) {
             statusBadge.textContent = 'Saved'
         }
 
-        titleDiv.insertAdjacentElement('beforeend', statusBadge)
+        summary.insertAdjacentElement('beforeend', statusBadge)
+
+        details.append(summary)
 
 
-        // Create content div
         const contentDiv = document.createElement('pre');
         contentDiv.className = "collapse-content text-sm";
         contentDiv.textContent = JSON.stringify(item.response, null, 2);
 
-        // Append children to the main collapse div
-        collapseDiv.appendChild(radioInput);
-        collapseDiv.appendChild(titleDiv);
-        collapseDiv.appendChild(contentDiv);
+        details.appendChild(contentDiv);
 
-        // Append the complete collapse div to the container
-        reportOutput.appendChild(collapseDiv);
+        reportOutput.appendChild(details);
     });
 }
 
