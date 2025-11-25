@@ -11,6 +11,20 @@ export default {
       platforms: ['win32'],
     }
   ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'USEPA',
+          name: 'emanifest-data-upload'
+        },
+        prerelease: true,
+        draft: true,
+        private: true,
+      }
+    }
+  ],
   plugins: [
    /* {
       name: '@electron-forge/plugin-auto-unpack-natives',
