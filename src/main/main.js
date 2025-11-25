@@ -8,16 +8,13 @@ import { clearCachedToken } from './api/auth.js'
 import { endpoints } from './api/endpoints.js';
 import log from 'electron-log/main.js';
 
-//const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY = process.env.MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY
-//const MAIN_WINDOW_WEBPACK_ENTRY = process.env.MAIN_WINDOW_WEBPACK_ENTRY
-
 log.initialize();
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 //get the current environment
-ipcMain.handle('settings:get-env', () => store.get('env'))
+ipcMain.handle('settings:get-env', () => environmentStore.get('env'))
 
 //sets the environment
 ipcMain.handle('settings:set-env', (_, env) => {

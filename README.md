@@ -2,8 +2,8 @@
 This application uploads data from a Microsoft Excel workbook to EPA's e-Manifest system via REST API. It allows creation of multiple electronic manifests in the same batch using data exported from another system or database.
 
 ## Requirements
-NodeJS [Download](https://nodejs.org/en/download)
-Git [Download](https://git-scm.com/install/windows)
+* NodeJS [Download](https://nodejs.org/en/download)
+* Git [Download](https://git-scm.com/install/windows)
 
 ## Installation
 ```shell

@@ -1,12 +1,10 @@
-//fuses  ----------DISABED TEMP - only needed for production----------
-//const { FusesPlugin } = require('@electron-forge/plugin-fuses');
-//const { FuseV1Options, FuseVersion } = require('@electron/fuses');
-
-module.exports = {
+import { FusesPlugin } from '@electron-forge/plugin-fuses';
+import { FuseV1Options, FuseVersion } from '@electron/fuses';
+export default {
   packagerConfig: {
     asar: true,
+    platform: ['win32'],
   },
-  rebuildConfig: {},
   makers: [
     {
       name: '@electron-forge/maker-zip',
@@ -14,13 +12,13 @@ module.exports = {
     }
   ],
   plugins: [
-      {
-        name: '@electron-forge/plugin-auto-unpack-natives',
-        config: {},
-      },
-    // Fuses are used to enable/disable various Electron functionality ----------DISABED TEMP - only needed for production----------
+   /* {
+      name: '@electron-forge/plugin-auto-unpack-natives',
+      config: {},
+    },*/
+    // Fuses are used to enable/disable various Electron functionality
     // at package time, before code signing the application
-    /*new FusesPlugin({
+    new FusesPlugin({
       version: FuseVersion.V1,
       [FuseV1Options.RunAsNode]: false,
       [FuseV1Options.EnableCookieEncryption]: true,
@@ -28,6 +26,6 @@ module.exports = {
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
-    }),*/
+    }),
   ],
 };

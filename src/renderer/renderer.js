@@ -15,7 +15,6 @@ async function updateEnvironmentElements(env, setEnv = false) {
     const environmentIcon = document.getElementById('envIcon')
     const environmentTooltip = document.getElementById('envTooltip')
     const envModalHeading = document.getElementById('envApi')
-    const successModalEnv = document.getElementById('successModalEnv')
 
     if (setEnv) await window.api.setEnv(env)
 
@@ -38,7 +37,6 @@ async function updateEnvironmentElements(env, setEnv = false) {
 
     environmentBadge.textContent = fullEnvText
     envModalHeading.textContent = fullEnvText
-    successModalEnv.textContent = fullEnvText
     environmentBadge.className = badgeClass
     environmentTooltip.setAttribute('data-tip', toolTipText);
 
@@ -46,8 +44,8 @@ async function updateEnvironmentElements(env, setEnv = false) {
 }
 
 async function updateApiElements(env) {
-    const apiCreds = await window.apiCredentials.get(env)
-    const envUrl = await window.envUrl.get(env)
+    const apiCreds = await window.api.credentials.get(env)
+    const envUrl = await window.api.envUrl.get(env)
 
     const viewCredsBtn = document.getElementById('viewCredsBtn')
     const apiId = document.getElementById('apiId')
@@ -82,6 +80,7 @@ async function validateAndSubmit(filePath) {
     const loading = document.getElementById('loading')
 
     const apiSubmissionResultsModal = document.getElementById('apiSubmissionResultsModal');
+    const closeResults = document.getElementById('closeResults')
     const errorModal = document.getElementById('errorModal');
     const errorModalTitle = document.getElementById('errorModalTitle')
     const errorSection = document.getElementById('errors')
@@ -106,30 +105,29 @@ async function validateAndSubmit(filePath) {
             badgeFailed.textContent = failLength
             badgeTotal.textContent = successLength + failLength
 
-            const successMtns = successArray.map(item => `${item.mtn} (${item.manifestId})`);
-            document.getElementById('mtnsByid').textContent = successMtns.join(', ')
-            apiSubmissionResultsModal.show();
-
             createReport([...failArray, ...successArray])
 
+            const successMtns = successArray.map(item => `${item.mtn} (${item.manifestId})`);
+            document.getElementById('mtnsByid').textContent = successMtns.join(', ')
+            apiSubmissionResultsModal.showModal();
         } else if (submitData.result === 'validationErrors') {
             errorModalTitle.textContent = 'Excel File Data Validation Errors'
             errorSection.textContent = JSON.stringify(submitData.allErrors, null, 2)
-            errorModal.show();
+            errorModal.showModal();
         }
         else if (submitData.result === 'authErrors') {
             errorModalTitle.textContent = 'Authentication Error with e-Manifest'
             errorSection.textContent = JSON.stringify(submitData.error, null, 2)
-            errorModal.show();
+            errorModal.showModal();
         }
         else {
             errorModalTitle.textContent = 'Errors with the e-Manifest API'
             errorSection.textContent = JSON.stringify(submitData.error, null, 2)
-            errorModal.show();
+            errorModal.showModal();
         }
     } catch (error) {
         errorModalTitle.textContent = 'Unknown Error - Check Logs'
-        errorModal.show();
+        errorModal.showModal();
         console.log(error)
     } finally {
         loading.classList.add('hidden')
@@ -140,7 +138,7 @@ function createReport(items) {
     const reportOutput = document.getElementById('reportOutput')
 
     items.forEach((item) => {
-       
+
         const details = document.createElement('details');
         details.className = "collapse collapse-arrow bg-base-100 border border-base-300";
         details.name = "results-accordian";
@@ -210,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let selectedExcelFilePath
 
     //handles environment changes - only show dev link if operating in dev mode
-    const appEnv = await window.env.get()
+    const appEnv = await window.api.devEnv.get()
 
     /***************NAV BAR *********************************/
 
@@ -272,7 +270,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await handleAllSubmit(selectedExcelFilePath)
     })
 
-    /************************API SETTINGS MODAL ***********************************************/
+    /**********************API SETTINGS MODAL ************************/
     const apiSettingsBtn = document.getElementById('apiSettingsBtn')
     const apiModal = document.getElementById('apiModal')
     const saveApiBtn = document.getElementById('saveApiBtn')
@@ -287,7 +285,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const apiId = document.getElementById('apiId')
         const apiKey = document.getElementById('apiKey')
 
-        await window.apiCredentials.set(currentEnv, apiId.value, apiKey.value)
+        await window.api.credentials.set(currentEnv, apiId.value, apiKey.value)
 
         showToast('API credentials saved', 'success', 7000)
     })
@@ -305,19 +303,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     })
 
-    /************************ERRORS MODAL ***********************************************/
+    /****************ERRORS MODAL *****************************/
     //copy error in errors modal
     const copyErrorBtn = document.getElementById('btnCopyError')
     copyErrorBtn.addEventListener('click', function () {
         copyToClipboard(document.getElementById('errors').textContent)
-    })
-
-    /**OTHER */
-
-    //toggle display of code at bottom of window
-    const fullReportBtn = document.getElementById('fullReportBtn')
-    fullReportBtn.addEventListener("click", function () {
-        const fullReport = document.getElementById('fullReport')
-        fullReport.classList.toggle('hidden')
     })
 });

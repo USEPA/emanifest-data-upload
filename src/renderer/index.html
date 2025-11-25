@@ -91,18 +91,6 @@
                     <button class="btn btn-primary" id="submitAllBtn">Submit Data</button>
                 </div>
             </div>
-
-            <div class="flex mt-3 gap-2 mb-3">
-
-                <button class="btn btn-soft btn-secondary ml-auto" id="fullReportBtn">Toggle Full Report<svg
-                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                    </svg>
-
-                </button>
-            </div>
             <div id="fullReport" class="mt-2 bg-base-100 p-6 rounded-sm break-words">
                 <div>
                     <h2 class="font-bold">Full Report from e-Manifest</h2>
@@ -119,6 +107,10 @@
             </div>
         </div>
     </main>
+
+    <!---------------MODALS------------------------>
+
+    <!--API Settings modal-->
     <dialog id="apiModal" class="modal">
         <div class="modal-box relative">
             <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="apiModal.close()">✕</button>
@@ -149,35 +141,11 @@
 
         </div>
     </dialog>
-
-    <dialog id="confirmationModal" class="modal">
-        <div class="modal-box relative">
-            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-                onclick="confirmationModal.close()">✕</button>
-            <div class="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                    class="w-10 h-10 text-success">
-                    <path fill-rule="evenodd"
-                        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
-                        clip-rule="evenodd" />
-                </svg>
-                <h2 class="ml-1 font-bold text-lg">Manifest Successfully Created!</h2>
-            </div>
-            <div class="mt-3">
-                <p>The manifest has been created in e-Manifest <span id="successModalEnv"></span>.</p>
-                <p><span>Manifest Tracking Number: </span><span id="mtn" class="font-bold"></span></p>
-
-            </div>
-
-            <div class="modal-action">
-                <button type="button" class="btn" onclick="confirmationModal.close()">Close</button>
-            </div>
-    </dialog>
-
+    <!--e-Manifest API results modal-->
     <dialog id="apiSubmissionResultsModal" class="modal">
         <div class="modal-box relative">
             <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-                onclick="apiSubmissionResultsModal.close()">✕</button>
+                onclick="apiSubmissionResultsModal.close()" id="closeResults">✕</button>
             <div class="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="w-10 h-10 text-success">
@@ -208,7 +176,7 @@
                 <button type="button" class="btn" onclick="apiSubmissionResultsModal.close()">Close</button>
             </div>
     </dialog>
-
+    <!--File validation modal-->
     <dialog id="errorModal" class="modal">
         <div class="modal-box w-11/12 max-w-5xl items-start justify-center mt-8 break-words">
             <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
@@ -240,7 +208,7 @@
             </div>
             <div class="mt-3">
                 <button class="btn btn-primary mt-2 mb-2" id="btnCopyError">Copy Error</button>
-                <div class="bg-gray-800 text-gray-100 p-4 rounded-md overflow-x-auto">
+                <div class="bg-base text-black p-4 border-1 rounded-md overflow-x-auto">
                     <pre id="errors" class="font-mono text-sm whitespace-pre pl-4"></pre>
                 </div>
 
@@ -301,7 +269,7 @@
         </div>
     </div>
 
-   <script type="module" src="./renderer.js"></script>
+    <script type="module" src="./renderer.js"></script>
 </body>
 
 </html>
