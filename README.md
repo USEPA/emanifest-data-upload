@@ -6,11 +6,13 @@ This application uploads data from a Microsoft Excel workbook to EPA's e-Manifes
 * Git [Download](https://git-scm.com/install/windows)
 
 ## Installation
+Clone the repo to your local machine, then run:
 ```shell
 npm install
 ```
 
 ## Running the Application
+Run the below to launch the application. This will open a new window.
 ```shell
 npm start
 ```

@@ -13,7 +13,7 @@
   },
   "keywords": [],
   "author": "Kyle Markley",
-  "license": "ISC",
+  "license": "MIT",
   "description": "import and submit manifest shipment data to e-Manifest API to begin electronic manifests",
   "type": "module",
   "dependencies": {
