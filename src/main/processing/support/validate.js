@@ -53,6 +53,7 @@ async function validateWastes(wastes, validManifestIds) {
         const valid = validate(row)
         if (!valid) {
             const schemaErrors = processSchemaErrors(validate.errors)
+            console.log(schemaErrors)
             errors.push(...schemaErrors);
         }
 
@@ -61,6 +62,13 @@ async function validateWastes(wastes, validManifestIds) {
             errors.push({
                 field: 'manifestId',
                 message: `manifestId ${row.manifestId} is not valid because it does not exist on the manifest tab.`
+            })
+        }
+
+        if (row.dotHazardous && !row.hasOwnProperty('idNumber')) {
+            errors.push({
+                field: 'idNumber',
+                message: `idNumber is required if dotHazardous = true`
             })
         }
 
@@ -99,6 +107,14 @@ async function validateHandlersBasic(handlers, validManifestIds) {
             errors.push({
                 field: 'manifestId',
                 message: `manifestId ${row.manifestId} is not valid because it does not exist on the manifest tab.`
+            })
+        }
+
+        //require order if transporter
+        if (row.type === 'Transporter' && !row.hasOwnProperty('order')) {
+            errors.push({
+                field: 'order',
+                message: `order is required if type = 'Transporter'`
             })
         }
 

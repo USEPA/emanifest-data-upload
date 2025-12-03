@@ -63,55 +63,6 @@ export async function buildManifestAll(info, manifestHandlers, wastes) {
     return { manifestId, payload }
 }
 
-//build for waste only
-export async function buildWasteManifest(data, wastes) {
-    let manifestWasteLines = []
-    for (const item of wastes) {
-        let wasteLine = await setWasteLine(item);
-        manifestWasteLines.push(wasteLine)
-    }
-
-    const manifest = {
-        submissionType: data.submissionType,
-        status: data.status,
-        originType: 'Service',
-        generator: {
-            epaSiteId: data.generatorId,
-            contact: {
-                phone: {
-                    number: '555-555-5555'
-                }
-            },
-            emergencyPhone: {
-                number: data.emergencyPhone
-            }
-        },
-        transporters: [
-            {
-                epaSiteId: data.transporter1Id,
-                order: 1
-            }
-        ],
-        designatedFacility: {
-            epaSiteId: data.tsdfId,
-            contact: {
-                phone: {
-                    number: '555-555-5555'
-                }
-            }
-        },
-        wastes: manifestWasteLines,
-        import: false
-    }
-
-    if (data.potentialShipDate !== '') {
-        let formattedDate = new Date(data.potentialShipDate)
-        formattedDate.setUTCHours(12, 0, 0, 0);
-        manifest.potentialShipDate = formattedDate.toISOString()
-    }
-    return manifest
-}
-
 const baseWasteLine = {
     dotHazardous: true,
     epaWaste: true,
