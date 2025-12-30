@@ -21,8 +21,7 @@ export default {
         },
         prerelease: true,
         draft: true,
-        private: false,
-        authToken: process.env.GITHUB_TOKEN
+        private: false
       }
     }
   ],
