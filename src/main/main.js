@@ -7,11 +7,17 @@ import { saveCredentials, getEnvironmentCredentials } from './api/credentials.js
 import { clearCachedToken } from './api/auth.js'
 import { endpoints } from './api/endpoints.js';
 import log from 'electron-log/main.js';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url)
 
 log.initialize();
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+// run this as early in the main process as possible
+if (require('electron-squirrel-startup')) app.quit();
 
 //get the current environment
 ipcMain.handle('settings:get-env', () => environmentStore.get('env'))
