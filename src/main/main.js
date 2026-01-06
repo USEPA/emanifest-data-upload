@@ -92,7 +92,8 @@ function createWindow() {
             preload: path.join(__dirname, '../preload/preload.js'),
             contextIsolation: true,
             nodeIntegration: false
-        }
+        },
+        icon: path.join(__dirname, '../../build/EM_Data_Upload.ico')
     })
     win.loadURL(path.join(__dirname, '../renderer/index.html'))
 }
