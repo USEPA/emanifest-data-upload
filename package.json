@@ -2,6 +2,10 @@
   "name": "emanifest-data-upload",
   "version": "1.0.0-beta.2",
   "main": "./src/main/main.js",
+  "repository": {
+    "type": "git",
+    "url": "USEPA/emanifest-data-upload"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron-forge start",
@@ -25,6 +29,7 @@
     "electron-log": "^5.4.3",
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^10.1.0",
+    "update-electron-app": "^3.1.2",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {

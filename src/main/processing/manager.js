@@ -25,7 +25,7 @@ export async function processSubmitBulkData(filePath) {
         //2a. process data from each tab
         const manifestProcessed = await processBulkManifestInfo(manifestRaw)
         const wastesProcessed = await processBulkWasteInfo(wastesRaw)
-        const handlersInitialProcessing = await processBulkHandlers(handlersRaw)
+        const handlersInitialProcessing = await processBulkHandlers(handlersRaw) 
 
         // 2b. check if any errors detected during processing
         const manifestCustomErrors = []

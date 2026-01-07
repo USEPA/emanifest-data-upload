@@ -117,7 +117,7 @@ async function validateAndSubmit(filePath) {
         }
         else if (submitData.result === 'authErrors') {
             errorModalTitle.textContent = 'Authentication Error with e-Manifest'
-            errorSection.textContent = JSON.stringify(submitData.error, null, 2)
+            errorSection.textContent = submitData.error
             errorModal.showModal();
         }
         else {
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     ghLinks.forEach(link => {
         link.addEventListener("click", async () => {
-            await window.api.openUrl('https://github.com/USEPA/emanifest-data-upload')
+            await window.api.openUrl('https://github.com/USEPA/emanifest-data-upload/wiki')
         })
     })
 

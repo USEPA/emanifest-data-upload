@@ -8,6 +8,10 @@ import { clearCachedToken } from './api/auth.js'
 import { endpoints } from './api/endpoints.js';
 import log from 'electron-log/main.js';
 import { createRequire } from 'module';
+import { updateElectronApp } from 'update-electron-app';
+
+//auto-update
+updateElectronApp();
 
 const require = createRequire(import.meta.url)
 

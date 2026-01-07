@@ -11,6 +11,8 @@ import manifestSchema from '../../schemas/manifest_schema.json' with { type: 'js
 import handlerBasicSchema from '../../schemas/handler_basic_schema.json' with {type: 'json'}
 import handlerFullSchema from '../../schemas/handler_full_schema.json' with {type: 'json'}
 
+const maxRows = 50
+
 export async function validateManifestInfo(manifests) {
     const validate = ajv.compile(manifestSchema)
     const results = []
@@ -34,9 +36,17 @@ export async function validateManifestInfo(manifests) {
                 message: `manifestId ${row.manifestId} is duplicated`
             });
         }
+        //validate not higher than max rows allowed
+        if (index > maxRows - 1) {
+            errors.push({
+                message: `cannot have more than ${maxRows} rows in a file`
+            });
+        }
+
         if (errors.length > 0) {
             results.push({ row: index + 1, errors })
         }
+
     })
     return results
 }
