@@ -1,9 +1,10 @@
 import { readWorkbook, getSheetData } from "./support/readSheets.js"
-import { processBulkManifestInfo, processBulkWasteInfo, processBulkHandlers, mapHandlers, groupWasteHandlers } from "./support/processBulk.js"
-import { buildBulkManifests } from "./support/buildManifest.js"
+import { processManifestInfo, processWasteInfo, processHandlers, transformHandlers, groupMapHandlers, groupByManifestId } from "./support/process.js"
+import { buildManifests } from "./support/buildManifest.js"
 import validation from './support/validate.js'
 import { submitRequestsToApi } from "../api/submitManifest.js"
-import { mergeErrorsByRow } from "./support/utils.js"
+import { stripCommentErrors, mergeErrorsByRow, getManifestIds, computeBatchResult } from './support/utils.js'
+import { AUTH_ERROR_MESSAGES } from "../api/apiConstants.js"
 
 import log from 'electron-log/main.js';
 
@@ -12,148 +13,118 @@ export async function processSubmitBulkData(filePath) {
 
         const allErrors = []
         let groupWastes
-        let manifestHandlersGrouped = []
-        let handlerTypeErrors = []
+        let transformedHandlers
         let handlersProcessed = {}
 
         //1. read each sheet and get raw data
-        const workbook = await readWorkbook(filePath)
-        const manifestRaw = await getSheetData(workbook, 'manifest')
-        const handlersRaw = await getSheetData(workbook, 'handlers')
-        const wastesRaw = await getSheetData(workbook, 'wastes')
+        const workbook = readWorkbook(filePath)
+        const manifestRaw = getSheetData(workbook, 'manifest')
+        const handlersRaw = getSheetData(workbook, 'handlers')
+        const wastesRaw = getSheetData(workbook, 'wastes')
 
         //2a. process data from each tab
-        const manifestProcessed = await processBulkManifestInfo(manifestRaw)
-        const wastesProcessed = await processBulkWasteInfo(wastesRaw)
-        const handlersInitialProcessing = await processBulkHandlers(handlersRaw) 
+        const manifestProcessedRaw = processManifestInfo(manifestRaw)
+        const wastesProcessedRaw = processWasteInfo(wastesRaw)
+        const handlersInitialProcessing = processHandlers(handlersRaw)
 
-        // 2b. check if any errors detected during processing
-        const manifestCustomErrors = []
-        manifestProcessed.forEach(row => {
-            if (row.commentErrors.length > 0) {
-                manifestCustomErrors.push(row.commentErrors[0])
-            }
-            delete row.commentErrors
-        })
+        //2b. Collect and strip row-level comment errors
+        const { cleanedRows: manifestProcessed, customErrors: manifestCustomErrors } = stripCommentErrors(manifestProcessedRaw);
 
-        const wasteCustomErrors = []
-        wastesProcessed.forEach(row => {
-            if (row.commentErrors.length > 0) {
-                wasteCustomErrors.push(row.commentErrors[0])
-            }
-            delete row.commentErrors
-        })
+        const { cleanedRows: wastesProcessed, customErrors: wasteCustomErrors } = stripCommentErrors(wastesProcessedRaw);
 
         //3a. validate manifest tab
-        const manifestSchemaErrors = await validation.validateManifestInfo(manifestProcessed)
-
+        const manifestSchemaErrors = validation.validateManifestInfo(manifestProcessed)
+        //merge manifest schema and custom errors
         const manifestErrors = mergeErrorsByRow(manifestSchemaErrors, manifestCustomErrors)
 
         if (manifestErrors.length > 0) {
             allErrors.push({ manifestErrors })
         }
 
-        const validManifestIds = validation.getManifestIds(manifestProcessed)
-
+        const validManifestIds = getManifestIds(manifestProcessed)
         //3b. validate wastes tab - if validation passes, group wastes by manifestId
-        const wasteSchemaErrors = await validation.validateWastes(wastesProcessed, validManifestIds)
+        const wasteSchemaErrors = validation.validateWastes(wastesProcessed, validManifestIds)
+        //merge waste schema and custom errors
         const wasteErrors = mergeErrorsByRow(wasteSchemaErrors, wasteCustomErrors)
 
         if (wasteErrors.length > 0) {
             allErrors.push({ wasteErrors })
-        } else {
-            groupWastes = await groupWasteHandlers(wastesProcessed)
         }
 
         //3c.i. - basic handler validation - must pass before doing additional validation and processing
-        const handlerBasicErrors = await validation.validateHandlersBasic(handlersInitialProcessing, validManifestIds)
+        const handlerBasicErrors = validation.validateHandlersBasic(handlersInitialProcessing, validManifestIds)
         if (handlerBasicErrors.length > 0) {
             allErrors.push({ handlerBasicErrors })
-        } else {
-            //group the handlers and run type validation rules
-            manifestHandlersGrouped = await groupWasteHandlers(handlersInitialProcessing)
-            handlerTypeErrors = await validation.validateHandlerTypes(manifestHandlersGrouped)
-            if (handlerTypeErrors.length > 0) {
-                allErrors.push({ handlerTypeErrors })
-            }
         }
 
-        // 3c.ii - if basic validation passes, do further processsing and advanced validation
-        if (handlerBasicErrors.length === 0 && handlerTypeErrors.length === 0) {
-            handlersProcessed = await mapHandlers(manifestHandlersGrouped)
+        // 3c.ii - if basic handler validation passes, transform structure, then do advanced validation
+        if (handlerBasicErrors.length === 0) {
+            transformedHandlers = transformHandlers(handlersInitialProcessing)
 
-            const handlerFullErrors = await validation.validateAllHandlers(handlersProcessed)
+            const handlerFullErrors = validation.validateHandlersFull(transformedHandlers)
+
             if (handlerFullErrors.length > 0) {
                 allErrors.push({ handlerFullErrors })
             }
         }
 
-        //3d. stop and return validation errors
+        /**
+         * 3d. if errors - stop processing and return validation errors to the renderer
+         *     if validation passes - process waste and handler data to be used for building payloads
+         * */
         if (allErrors.length > 0) {
             return { result: 'validationErrors', allErrors }
+        } else {
+            groupWastes = groupByManifestId(wastesProcessed)
+            handlersProcessed = groupMapHandlers(transformedHandlers)
         }
 
-        //4. build manifest payload
-        const manifestPayloads = await buildBulkManifests(manifestProcessed, handlersProcessed, groupWastes)
+        //4. build manifest payloads
+        const manifestPayloads = buildManifests(manifestProcessed, handlersProcessed, groupWastes)
 
         //5. submit to API
         const apiSubmitResponse = await submitRequestsToApi(manifestPayloads)
 
-        let results = {
-            success: [],
-            fail: []
-        }
-
-        apiSubmitResponse.forEach(item => {
-            if (item.result == 'Saved') {
-                results.success.push({
+        //6. handle API results
+        const { success, fail } = apiSubmitResponse.reduce((acc, item) => {
+            if (item.result === 'Saved') {
+                acc.success.push({
                     manifestId: item.manifestId,
                     mtn: item.response.manifestTrackingNumber,
                     response: item.response
-                })
+                });
             } else {
-                results.fail.push({
+                acc.fail.push({
                     manifestId: item.manifestId,
                     result: item.result,
-                    response: item.result == 'apiValidationError' ? item.response : item.error
-                })
+                    response: item.response
+                });
             }
-        })
+            return acc;
+        }, { success: [], fail: [] });
 
-        let batchResult = 'success'
-        if (results.fail.length > 0 && results.success.length === 0) {
-            batchResult = 'allFailed'
-        } else if (results.fail.length > 0 && results.success.length > 0) {
-            batchResult = 'someFailed'
-        }
+        const batchResult = computeBatchResult(success.length, fail.length);
 
-        return { result: 'submitted', batchResult, results }
+        return { result: 'submitted', batchResult, results: { success, fail } };
 
     } catch (error) {
-        //this handles all of the possible auth errors - the processing will stop if there is an auth failure and return to the renderer
-        log.error(error)
-        if (error.hasOwnProperty('cause')) {
-            if (error.cause.code === 'E_MissingApiCredentials') {
-                return {
-                    result: 'authErrors',
-                    error: 'API ID or Key are not set for the environment. Please add under API Settings.'
-                }
-            }
-            else if (error.cause.code === 'E_SecurityApiIdLocked') {
-                return {
-                    result: 'authErrors',
-                    error: 'API ID is locked. You need to reset it in RCRAInfo by generating a new key.'
-                }
-            }
-            else if (error.cause.code === 'E_SecurityApiInvalidCredentials' || 'E_SecurityApiInvalidStatus') {
-                return {
-                    result: 'authErrors',
-                    error: 'Invalid API credentials. Confirm and set API ID and Key for the environment. Otherwise generate a new key in RCRAInfo.'
-                }
-            }
+        log.error('processing error', { code: error.code, message: error.message })
+        
+        //excel workbook errors
+        if (error.code === 'E_MissingSheet' || error.code === 'E_EmptySheet') {
+            log.warn(`Input error: ${error.message}`);
+            return { result: 'inputErrors', error: error.message, sheetName: error.sheetName };
         }
-        else {
-            return { result: 'systemError', error: error.message }
+        //authentication errors
+        if (Object.hasOwn(AUTH_ERROR_MESSAGES, error.code)) {
+            log.error(`authentication error: ${error.message}`);
+            return { result: 'authErrors', error: AUTH_ERROR_MESSAGES[error.code] };
         }
+
+        if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED' || error.code === 'apiNetworkError') {
+            return { result: 'systemError', error: error.message };
+        }
+        //fallback
+        return { result: 'systemError', error: error.message };
     }
 }

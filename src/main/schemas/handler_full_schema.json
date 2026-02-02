@@ -6,6 +6,12 @@
         "rowNumber": {
             "type": "integer"
         },
+        "manifestId": {
+            "type": "integer"
+        },
+        "type": {
+            "type": "string"
+        },
         "epaSiteId": {
             "type": "string",
             "minLength": 4,
@@ -45,7 +51,7 @@
                 "email": {
                     "type": "string",
                     "maxLength": 100,
-                    "format":"email"
+                    "format": "email"
                 }
             },
             "additionalProperties": false

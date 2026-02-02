@@ -1,16 +1,11 @@
 import apiClient from './apiClient.js';
-
-const saveEndpoint = '/rest/api/v1/emanifest/manifest/save'
+import { saveEndpoint } from './apiConstants.js';
 
 export async function submitRequestsToApi(payloads) {
     const responses = [];
     for (const payload of payloads) {
-        try {
-            const response = await submitToApi(payload);
-            responses.push(response);
-        } catch (error) {
-            throw error
-        }
+        const response = await submitToApi(payload);
+        responses.push(response);
     }
     return responses;
 }
@@ -18,11 +13,14 @@ export async function submitRequestsToApi(payloads) {
 export async function submitToApi(manifest) {
 
     try {
-        const saveResponse = await apiClient.postForm(saveEndpoint, { manifest: JSON.stringify(manifest.payload) }, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        })
+        const saveResponse = await apiClient.postForm(
+            saveEndpoint,
+            { manifest: JSON.stringify(manifest.payload) },
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
         return {
             manifestId: manifest.manifestId,
             result: 'Saved',
@@ -30,21 +28,15 @@ export async function submitToApi(manifest) {
         }
 
     } catch (error) {
-        if (error.hasOwnProperty('cause')) {
-            throw error;
-        }
-        if (error.hasOwnProperty('operationStatus')) {
+        //if manifest validation failed return the error
+        if (error.code === 'apiValidationError') {
             return {
                 manifestId: manifest.manifestId,
                 result: 'apiValidationError',
-                response: error
-            }
-        } else {
-            return {
-                manifestId: manifest.manifestId,
-                result: 'unknownApiError',
-                error: 'There was an error submitting to the e-Manifest API. Please try again or check logs.'
+                response: error.data
             }
         }
+        //in all other cases stop processing and throw error (i.e. authentications issues)
+        throw error;
     }
 }

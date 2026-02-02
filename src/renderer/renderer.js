@@ -80,16 +80,18 @@ async function validateAndSubmit(filePath) {
     const loading = document.getElementById('loading')
 
     const apiSubmissionResultsModal = document.getElementById('apiSubmissionResultsModal');
-    const closeResults = document.getElementById('closeResults')
-    const errorModal = document.getElementById('errorModal');
     const errorModalTitle = document.getElementById('errorModalTitle')
     const errorSection = document.getElementById('errors')
     const reportOutput = document.getElementById('reportOutput')
     reportOutput.innerHTML = ''
 
+    const standardErrorText = document.getElementById('standardErrorText')
+
     loading.classList.remove('hidden')
     try {
         const submitData = await window.api.submitAllData(filePath)
+
+        console.log(submitData)
 
         if (submitData.result === 'submitted') {
             const successArray = submitData.results.success
@@ -110,28 +112,56 @@ async function validateAndSubmit(filePath) {
             const successMtns = successArray.map(item => `${item.mtn} (${item.manifestId})`);
             document.getElementById('mtnsByid').textContent = successMtns.join(', ')
             apiSubmissionResultsModal.showModal();
-        } else if (submitData.result === 'validationErrors') {
+        } else if (submitData.result === 'validationErrors' || submitData.result === 'inputErrors') {
             errorModalTitle.textContent = 'Excel File Data Validation Errors'
-            errorSection.textContent = JSON.stringify(submitData.allErrors, null, 2)
-            errorModal.showModal();
+            if (submitData.result === 'validationErrors') {
+                errorSection.textContent = JSON.stringify(submitData.allErrors, null, 2)
+            } else {
+                errorSection.textContent = submitData.error
+            }
+            displayErrors()
         }
         else if (submitData.result === 'authErrors') {
             errorModalTitle.textContent = 'Authentication Error with e-Manifest'
-            errorSection.textContent = submitData.error
-            errorModal.showModal();
+            standardErrorText.textContent = submitData.error
+            displayErrors('standard')
         }
         else {
             errorModalTitle.textContent = 'Errors with the e-Manifest API'
             errorSection.textContent = JSON.stringify(submitData.error, null, 2)
-            errorModal.showModal();
+            displayErrors()
         }
     } catch (error) {
         errorModalTitle.textContent = 'Unknown Error - Check Logs'
-        errorModal.showModal();
+        displayErrors()
         console.log(error)
     } finally {
         loading.classList.add('hidden')
     }
+}
+
+function displayErrors(type) {
+    const errorModal = document.getElementById('errorModal');
+    const standardErrorText = document.getElementById('standardErrorText')
+    const codeErrors = document.getElementById('codeErrors')
+
+    if (type === 'standard') {
+        if (standardErrorText.classList.contains('hidden')) {
+            standardErrorText.classList.remove('hidden')
+        }
+        if (!codeErrors.classList.contains('hidden')) {
+            codeErrors.classList.add('hidden')
+        }
+    }
+    else {
+        if (!standardErrorText.classList.contains('hidden')) {
+            standardErrorText.classList.add('hidden')
+        }
+        if (codeErrors.classList.contains('hidden')) {
+            codeErrors.classList.remove('hidden')
+        }
+    }
+    errorModal.show()
 }
 
 function createReport(items) {
@@ -292,6 +322,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const viewCredsBtn = document.getElementById('viewCredsBtn')
     viewCredsBtn.addEventListener('click', () => {
+        const apiId = document.getElementById('apiId')
+        const apiKey = document.getElementById('apiKey')
         if (apiId.type === 'password') {
             apiId.type = 'text'
             apiKey.type = 'text'

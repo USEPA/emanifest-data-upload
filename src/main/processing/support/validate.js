@@ -2,6 +2,8 @@ import Ajv from 'ajv'
 import addFormats from 'ajv-formats';
 import ajvErrors from 'ajv-errors';
 
+import { groupByManifestId } from './process.js';
+
 const ajv = new Ajv({ allErrors: true, $data: true })
 ajvErrors(ajv);
 addFormats(ajv);
@@ -11,12 +13,14 @@ import manifestSchema from '../../schemas/manifest_schema.json' with { type: 'js
 import handlerBasicSchema from '../../schemas/handler_basic_schema.json' with {type: 'json'}
 import handlerFullSchema from '../../schemas/handler_full_schema.json' with {type: 'json'}
 
-const maxRows = 50
+const maxRows = 50 //const for maximum manifests per batch
 
-export async function validateManifestInfo(manifests) {
+//manifest tab validation
+export function validateManifestInfo(manifests) {
     const validate = ajv.compile(manifestSchema)
     const results = []
 
+    //get count of distinct manifestId values
     const freqMap = buildManifestIdFrequencyMap(manifests)
 
     manifests.forEach((row, index) => {
@@ -36,13 +40,15 @@ export async function validateManifestInfo(manifests) {
                 message: `manifestId ${row.manifestId} is duplicated`
             });
         }
-        //validate not higher than max rows allowed
+
+        //validate max number of rows allowed
         if (index > maxRows - 1) {
             errors.push({
-                message: `cannot have more than ${maxRows} rows in a file`
+                message: `cannot have more than ${maxRows} manifest rows in a file`
             });
         }
 
+        //push all errors for the row
         if (errors.length > 0) {
             results.push({ row: index + 1, errors })
         }
@@ -51,7 +57,8 @@ export async function validateManifestInfo(manifests) {
     return results
 }
 
-async function validateWastes(wastes, validManifestIds) {
+//waste tab validation
+function validateWastes(wastes, validManifestIds) {
 
     const validate = ajv.compile(wasteSchema)
     const results = []
@@ -63,7 +70,6 @@ async function validateWastes(wastes, validManifestIds) {
         const valid = validate(row)
         if (!valid) {
             const schemaErrors = processSchemaErrors(validate.errors)
-            console.log(schemaErrors)
             errors.push(...schemaErrors);
         }
 
@@ -75,7 +81,7 @@ async function validateWastes(wastes, validManifestIds) {
             })
         }
 
-        if (row.dotHazardous && !row.hasOwnProperty('idNumber')) {
+        if (row.dotHazardous && !Object.hasOwn(row, 'idNumber')) {
             errors.push({
                 field: 'idNumber',
                 message: `idNumber is required if dotHazardous = true`
@@ -98,10 +104,12 @@ async function validateWastes(wastes, validManifestIds) {
     return results
 }
 
-async function validateHandlersBasic(handlers, validManifestIds) {
+//handler tab- basic validation
+function validateHandlersBasic(handlers, validManifestIds) {
     const validate = ajv.compile(handlerBasicSchema)
-    const results = []
+    let results = []
 
+    //individual handler row validation
     handlers.forEach((row, index) => {
         const errors = []
 
@@ -121,7 +129,7 @@ async function validateHandlersBasic(handlers, validManifestIds) {
         }
 
         //require order if transporter
-        if (row.type === 'Transporter' && !row.hasOwnProperty('order')) {
+        if (row.type === 'Transporter' && !Object.hasOwn(row, 'order')) {
             errors.push({
                 field: 'order',
                 message: `order is required if type = 'Transporter'`
@@ -140,22 +148,34 @@ async function validateHandlersBasic(handlers, validManifestIds) {
             results.push({ field: 'manifestId', message: `at least one handler row is required for manifestId ${id}` })
         })
     }
+
+    //validate handler types only if other validation rules pass
+    if (results.length === 0) {
+        const handlerTypeErrors = validateHandlerTypes(handlers)
+
+        if (handlerTypeErrors.length > 0) {
+            results = [...handlerTypeErrors]
+        }
+    }
+
     return results
 }
 
-async function validateHandlerTypes(groupedHandlers) {
+//handler type validation for the handlers tab for a given manifestId
+function validateHandlerTypes(handlers) {
+
+    const manifestHandlersGrouped = groupByManifestId(handlers)
     const results = []
 
-    for (const key in groupedHandlers) {
+    for (const key in manifestHandlersGrouped) {
         const errors = []
-        if (groupedHandlers.hasOwnProperty(key)) {
+        if (Object.hasOwn(manifestHandlersGrouped, key)) {
 
-            const manifestHandlers = groupedHandlers[key];
+            const manifestHandlers = manifestHandlersGrouped[key];
 
             const types = manifestHandlers.map(h => h.type)
             //check for missing types
             const missing = ['Generator', 'Transporter', 'DesignatedFacility'].filter(t => !types.includes(t))
-
             if (missing.length > 0) {
                 missing.forEach(type => {
                     errors.push({
@@ -194,30 +214,13 @@ async function validateHandlerTypes(groupedHandlers) {
     return results
 }
 
-async function validateAllHandlers(allHandlers) {
-
-    // Create an array of promises, each promise is a call to validateHandlersFull
-    const all = allHandlers.map((manifestHandlers) => validateHandlersFull(manifestHandlers));
-
-    // Wait for all the requests to resolve (or reject)
-    const results = await Promise.all(all);
-    const flattedResults = results.flat()
-
-    return flattedResults
-}
-
-async function validateHandlersFull(handlers) {
+//NEW- validate handlers rows for a group of individual manifest handlers
+function validateHandlersFull(handlers) {
     try {
-        const handlersList = [handlers.generator, ...handlers.transporters, handlers.designatedFacility]
-
-        if (handlers.hasOwnProperty('broker')) {
-            handlersList.push(broker)
-        }
-
         const validate = ajv.compile(handlerFullSchema)
         const results = []
 
-        handlersList.forEach((handler) => {
+        handlers.forEach((handler) => {
             const valid = validate(handler)
             if (!valid) {
                 results.push({
@@ -236,21 +239,16 @@ async function validateHandlersFull(handlers) {
     }
 }
 
-//support functions
-function buildManifestIdFrequencyMap(manifests) {
-    return manifests.reduce((freq, manifest) => {
-        const id = manifest.manifestId;
-        freq[id] = (freq[id] || 0) + 1;
-        return freq;
-    }, {});
-}
+/**SUPPORT FUNCTIONS */
 
-export function getManifestIds(manifests) {
-    return new Set(
-        manifests
-            .map(manifest => manifest.manifestId)
-            .filter(id => typeof id === 'number')
-    );
+//returns count per value manifestId (numeric values only)
+function buildManifestIdFrequencyMap(manifests) {
+    return manifests.reduce((freq, { manifestId }) => {
+        if (Number.isInteger(manifestId)) {
+            freq[manifestId] = (freq[manifestId] || 0) + 1;
+        }
+        return freq;
+    }, Object.create(null));
 }
 
 function validateManifestIds(manifestIds, tabData) {
@@ -285,4 +283,4 @@ function processSchemaErrors(errors) {
     })
 }
 
-export default { validateWastes, validateManifestInfo, validateHandlersBasic, validateHandlersFull, validateAllHandlers, validateHandlerTypes, getManifestIds }
+export default { validateWastes, validateManifestInfo, validateHandlersBasic, validateHandlersFull, validateHandlerTypes }

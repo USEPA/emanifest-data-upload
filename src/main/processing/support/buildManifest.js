@@ -1,5 +1,5 @@
-//build for all
-export async function buildBulkManifests(info, handlers, wastes) {
+//manages building the payloads
+export function buildManifests(info, handlers, wastes) {
 
     let manifests = []
 
@@ -9,13 +9,14 @@ export async function buildBulkManifests(info, handlers, wastes) {
         const manifestHandlers = handlers.find(h => h.manifestId == manifestId)
         const manifestWastes = wastes[manifestId]
 
-        const payload = await buildManifestAll(item, manifestHandlers, manifestWastes)
+        const payload = buildSingleManifest(item, manifestHandlers, manifestWastes)
         manifests.push(payload)
     }
     return manifests
 }
 
-export async function buildManifestAll(info, manifestHandlers, wastes) {
+//handles building a single manifest payload
+function buildSingleManifest(info, manifestHandlers, wastes) {
     const payload = {
         submissionType: info.submissionType,
         status: info.status,
@@ -26,16 +27,8 @@ export async function buildManifestAll(info, manifestHandlers, wastes) {
         containsPreviousRejectOrResidue: false,
     }
 
-    let manifestId
-    if (payload.hasOwnProperty('manifestId')) {
-        manifestId = info.manifestId
-        delete payload.manifestId
-    }
-
-    delete payload.generator.rowNumber
-    delete payload.designatedFacility.rowNumber
-    payload.transporters.forEach(t => delete t.rowNumber)
-    if (payload.broker) delete payload.broker.rowNumber
+    let manifestId = info.manifestId
+    delete payload.manifestId
 
     //set potential ship date
     if (info.potentialShipDate !== undefined) {
@@ -49,7 +42,7 @@ export async function buildManifestAll(info, manifestHandlers, wastes) {
 
     //waste lines
     for (const item of wastes) {
-        let wasteLine = await setWasteLine(item);
+        let wasteLine = setWasteLine(item);
         payload.wastes.push(wasteLine)
     }
 
@@ -100,7 +93,7 @@ const baseWasteLine = {
     }
 }
 
-async function setWasteLine(line) {
+function setWasteLine(line) {
     let newLine = JSON.parse(JSON.stringify(baseWasteLine));
 
     newLine.lineNumber = line.lineNumber
@@ -119,7 +112,7 @@ async function setWasteLine(line) {
         newLine.dotInformation.idNumber.code = line.idNumber
         delete newLine.wasteDescription
         if (line.federalWasteCodes) {
-            newLine.hazardousWaste.federalWasteCodes = await processWasteCodes(line.federalWasteCodes)
+            newLine.hazardousWaste.federalWasteCodes = processWasteCodes(line.federalWasteCodes)
         }
     } else {
         newLine.wasteDescription = line.description
@@ -127,12 +120,12 @@ async function setWasteLine(line) {
     }
 
     if (line.generatorWasteCodes) {
-        newLine.hazardousWaste.generatorStateWasteCodes = await processWasteCodes(line.generatorWasteCodes)
+        newLine.hazardousWaste.generatorStateWasteCodes = processWasteCodes(line.generatorWasteCodes)
     } else {
         delete newLine.hazardousWaste.generatorStateWasteCodes
     }
     if (line.tsdfWasteCodes) {
-        newLine.hazardousWaste.tsdfStateWasteCodes = await processWasteCodes(line.tsdfWasteCodes)
+        newLine.hazardousWaste.tsdfStateWasteCodes = processWasteCodes(line.tsdfWasteCodes)
     } else {
         delete newLine.hazardousWaste.tsdfStateWasteCodes
     }
@@ -170,7 +163,7 @@ async function setWasteLine(line) {
     return newLine
 }
 
-const processWasteCodes = async (codes) => {
+const processWasteCodes = (codes) => {
     let wasteCodes = []
     codes.forEach(code => {
         wasteCodes.push({ code: code })

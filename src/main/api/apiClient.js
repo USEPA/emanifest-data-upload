@@ -1,7 +1,7 @@
 import axios from 'axios'
 import log from 'electron-log/main.js';
 
-import { endpoints } from './endpoints.js'
+import { endpoints, AUTH_ERROR_MESSAGES } from './apiConstants.js'
 import { getCurrentEnv } from './environmentStore.js'
 import { getAuthToken } from './auth.js'
 
@@ -16,7 +16,11 @@ apiClient.interceptors.request.use(
     config.baseURL = endpoints[currentEnv].baseURL
 
     //check if auth request
-    const isAuthRequest = config.url.includes('/auth')
+    const url = String(config.url || '');
+    const isAuthRequest = url.includes('/auth')
+
+    //ensure headers exists
+    config.headers = config.headers || {};
 
     //if not auth request get and attach token to request header
     if (!isAuthRequest) {
@@ -25,10 +29,15 @@ apiClient.interceptors.request.use(
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
         } else {
-          return Promise.reject(new Error('Authentication token is missing.'))
+          const err = new Error('Authentication token is missing.');
+          err.code = 'E_MissingApiCredentials';
+          throw err;
         }
       } catch (error) {
-        return Promise.reject(error);
+        if (!error.code) {
+          error.code = 'E_MissingApiCredentials';
+        }
+        throw error;
       }
     }
     return config
@@ -42,29 +51,63 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     //check if auth request
-    const requestUrl = error.config ? error.config.url : ''
-    const isAuthRequest = requestUrl.includes('/auth')
-   
-    //handling failed auth requests and returning the error
+    const requestUrl = error?.config?.url ?? '';
+    const isAuthRequest = requestUrl.includes('/auth');
+
+    const data = error?.response?.data;
+
+    // If an upstream error already has a known auth code, pass it through without relogging as setup
+    if (Object.hasOwn(AUTH_ERROR_MESSAGES, error?.code)) {
+      return Promise.reject(error);
+    }
+
+    //auth errors
     if (isAuthRequest) {
-      return Promise.reject(new Error('Authentication failed', { cause: error.response.data }))
+      const apiCode = data?.code ?? data?.ErrorCode ?? data?.errorCode;
+
+      console.log('is auth requests')
+      console.log('apiCode', apiCode)
+
+      //check for standard auth error codes - otherwise return E_AuthOther
+      let code = Object.hasOwn(AUTH_ERROR_MESSAGES, apiCode) ? apiCode : 'E_AuthOther';
+
+      const err = new Error('Authentication failed');
+      err.code = code;
+      return Promise.reject(err);
     }
 
-  
+    //non-auth errors, outside 2xx codes
     if (error.response) {
-      // Server responded with a status code outside of 2xx
-      log.error('Error response:', error.response.data)
-      
-      return Promise.reject(error.response.data)
-
-    } else if (error.request) {
-      // Request was made but no response was received
-      log.error('No response received:', error.request)
-    } else {
-      // Something else happened in setting up the request
-      log.error('Request error:', error.message)
+      log.error('API validation error')
+      const err = new Error('API validation error');
+      err.code = 'apiValidationError';
+      err.data = data;
+      return Promise.reject(err);
     }
-    return Promise.reject(error) // Always reject the promise for error handling
+
+    // Request was made but no response was received
+    if (error.request) {
+      log.error('No response received:', { message: error.message })
+      const networkCode = error.code; // e.g., ECONNABORTED, ERR_NETWORK
+      const syntheticData = {
+        code: 'apiNetworkError',
+        message: 'No response received from API',
+        networkCode
+      }
+      const err = new Error('No response received from API');
+      err.data = syntheticData
+      return Promise.reject(err);
+    }
+
+    //setup error
+    log.error('Request setup error', { message: error.message });
+
+    const err = new Error(error.message || 'Request setup error');
+    err.code = error.code || 'E_RequestSetup';
+    err.status = null;
+    err.data = { message: err.message };
+    return Promise.reject(err);
+
   }
 );
 

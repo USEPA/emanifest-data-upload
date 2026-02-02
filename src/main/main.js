@@ -5,7 +5,7 @@ import { environmentStore } from './api/environmentStore.js'
 import { processSubmitBulkData } from './processing/manager.js';
 import { saveCredentials, getEnvironmentCredentials } from './api/credentials.js';
 import { clearCachedToken } from './api/auth.js'
-import { endpoints } from './api/endpoints.js';
+import { endpoints } from './api/apiConstants.js';
 import log from 'electron-log/main.js';
 import { createRequire } from 'module';
 import { updateElectronApp } from 'update-electron-app';
@@ -47,7 +47,7 @@ ipcMain.handle('credentials:set', async (_, env, apiId, apiKey) => {
     return true
 })
 
-ipcMain.handle('credentials:get', async (_) => {
+ipcMain.handle('credentials:get', async () => {
     const creds = await getEnvironmentCredentials()
     return creds
 })
@@ -69,7 +69,6 @@ ipcMain.handle('submit-all-data', async (_, filePath) => {
         return result
 
     } catch (error) {
-        console.error('main js returning')
         return {
             result: 'systemError',
             message: error.message

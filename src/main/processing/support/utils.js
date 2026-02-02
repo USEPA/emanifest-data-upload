@@ -1,25 +1,23 @@
-export function groupByKey(array, key) {
-    return array.reduce((acc, item) => {
-        // Use item[key] as the group identifier
-        const groupValue = item[key];
-        // Initialize the group if it does not exist
-        if (!acc[groupValue]) {
-            acc[groupValue] = [];
+export function stripCommentErrors(rows) {
+    const customErrors = [];
+    const cleanedRows = rows.map(row => {
+        const { commentErrors = [], ...rest } = row;
+        if (commentErrors.length > 0) {
+            customErrors.push(commentErrors[0]);
         }
-        // Push the current item into its respective group array
-        acc[groupValue].push(item);
-        return acc;
-    }, {});
+        return rest;
+    });
+    return { cleanedRows, customErrors };
 }
 
 export function mergeErrorsByRow(errorsSet1, errorsSet2) {
 
-    if (errorsSet1.length == 0) {
-        return errorsSet2
-    } else if (errorsSet2.length == 0) {
-        return errorsSet1
-    } else if (errorsSet1.length == 0 && errorsSet2.length == 0) {
+    if (errorsSet1.length === 0 && errorsSet2.length === 0) {
         return []
+    } else if (errorsSet1.length === 0) {
+        return errorsSet2
+    } else if (errorsSet2.length === 0) {
+        return errorsSet1
     }
 
     const mergedMap = new Map();
@@ -39,4 +37,18 @@ export function mergeErrorsByRow(errorsSet1, errorsSet2) {
     addErrors(errorsSet2);
 
     return Array.from(mergedMap.values());
+}
+
+export function getManifestIds(manifests) {
+    return new Set(
+        manifests
+            .map(manifest => manifest.manifestId)
+            .filter(id => typeof id === 'number')
+    );
+}
+
+export function computeBatchResult(successCount, failCount) {
+    if (failCount > 0 && successCount === 0) return 'allFailed';
+    if (failCount > 0 && successCount > 0) return 'someFailed';
+    return 'success';
 }

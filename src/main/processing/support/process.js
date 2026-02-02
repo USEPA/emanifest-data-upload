@@ -1,6 +1,4 @@
-import { groupByKey } from './utils.js'
-
-export async function processBulkManifestInfo(data) {
+export function processManifestInfo(data) {
     return data.map(row => {
         const { errors, results } = parseComments(row.comments);
         return {
@@ -13,7 +11,7 @@ export async function processBulkManifestInfo(data) {
     })
 }
 
-export async function processBulkWasteInfo(data) {
+export function processWasteInfo(data) {
     return data.map(row => {
         const { errors, results } = parseComments(row.comments)
         return {
@@ -29,7 +27,7 @@ export async function processBulkWasteInfo(data) {
     })
 }
 
-export async function processBulkHandlers(data) {
+export function processHandlers(data) {
     return data.map((row) => {
         return {
             rowNumber: row.__rowNum__,
@@ -41,6 +39,8 @@ export async function processBulkHandlers(data) {
 //generic handler mapping spreadsheet columns (right) to JSON structure (left)
 const handlerMapping = {
     rowNumber: 'rowNumber',
+    manifestId: 'manifestId',
+    type:'type',
     epaSiteId: 'epaSiteId',
     order: 'order',
     name: 'name',
@@ -61,53 +61,69 @@ const handlerMapping = {
     'contact.phone.number': 'contactPhone',
     'contact.email': 'contactEmail'
 }
+//transform the handler tab spreadsheet structure closer to expected manifest JSON structure
+export function transformHandlers(handlers) {
+    return handlers.map(row => mapRow(row, handlerMapping))
+}
 
-//returns handlers based on their type
-export async function mapHandlers(groupedHandlers) {
-    const mappedHandlers = []
+//
+export function groupMapHandlers(handlers) {
 
-    for (const key in groupedHandlers) {
-        if (groupedHandlers.hasOwnProperty(key)) {
-            const manifestHandlers = groupedHandlers[key];
+    const grouped = groupByManifestId(handlers);
+    const manifests = [];
 
-            const result = {
-                manifestId: key,
-                generator: {},
-                transporters: [],
-                designatedFacility: {},
-                broker: {}
+    for (const [key, items] of Object.entries(grouped)) {
+        const manifestId = key
+        const result = {
+            manifestId,
+            generator: {},
+            transporters: [],
+            designatedFacility: {},
+            broker: {}
+        };
+        
+        for (const item of items) {
+            const itemType = item.type
+            delete(item.manifestId)
+            delete(item.type)
+            delete(item.rowNumber)
+            switch (itemType) {
+                case 'Generator':
+                    result.generator = { ...item };
+                    break;
+                case 'Transporter':
+                    result.transporters.push({ ...item });
+                    break;
+                case 'DesignatedFacility':
+                    result.designatedFacility = { ...item };
+                    break;
+                case 'Broker':
+                    result.broker = { ...item };
+                    break;
+                default:
+                    // ignore or handle other types here if needed
+                    break;
             }
-            manifestHandlers.forEach(item => {
-                const type = item.type.toLowerCase()
-                const mapped = mapRow(item, handlerMapping)
-                switch (type) {
-                    case 'generator':
-                        result.generator = mapped || {}
-                        break;
-                    case 'transporter':
-                        result.transporters.push(mapped || {})
-                        break;
-                    case 'designatedfacility':
-                        result.designatedFacility = mapped || {}
-                        break;
-                    case 'broker':
-                        result.broker = mapped || {}
-                        break;
-                }
-            })
-            if (Object.keys(result.broker).length === 0) delete result.broker
-            mappedHandlers.push(result)
         }
+        if (Object.keys(result.broker).length === 0) delete result.broker
+        manifests.push(result);
     }
-    return mappedHandlers
+
+    return manifests;
 }
 
-export async function groupWasteHandlers(rows) {
-    return groupByKey(rows, 'manifestId')
+export function groupByManifestId(rows) {
+    return rows.reduce((acc, row) => {
+        const id = row.manifestId;
+        if (!acc[id]) acc[id] = [];
+        acc[id].push(row);
+        return acc;
+    }, {});
 }
+
 
 //contains column names that should be numeric
-const numericColumns = new Set(['rowNumber', 'streetNumber', 'order'])
+const numericColumns = new Set(['rowNumber', 'manifestId', 'streetNumber', 'order'])
 
 //maps the excel column data to manifest JSON structure based on handlerMapping object
 function mapRow(row, mapping) {

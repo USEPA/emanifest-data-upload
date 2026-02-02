@@ -1,8 +1,7 @@
 import log from 'electron-log/main.js';
 import { getEnvironmentCredentials } from './credentials.js'
 import apiClient from './apiClient.js';
-
-const authEndpoint = '/rest/api/v1/auth/'
+import { authEndpoint } from './apiConstants.js'
 
 let cachedToken = null
 let tokenExpiration = null
@@ -16,20 +15,18 @@ export async function getAuthToken() {
     const { apiId, apiKey } = await getEnvironmentCredentials()
 
     if (apiId == '' || apiKey == '') {
-        log.error('no api id or key for environment')
-        throw new Error('Missing API credentials', { cause: { code: 'E_MissingApiCredentials' } })
+        const err = new Error('Missing API credentials');
+        err.code = 'E_MissingApiCredentials';
+        throw err;
     }
 
-    try {
-        const authResponse = await apiClient.get(`${authEndpoint}${apiId}/${apiKey}`)
+    const authResponse = await apiClient.get(`${authEndpoint}${apiId}/${apiKey}`)
 
-        cachedToken = authResponse.data.token
-        tokenExpiration = new Date(authResponse.data.expiration)
+    cachedToken = authResponse.data.token
+    tokenExpiration = new Date(authResponse.data.expiration)
 
-        return cachedToken
-    } catch (error) {
-        throw error
-    }
+    return cachedToken
+
 }
 
 export function clearCachedToken() {
