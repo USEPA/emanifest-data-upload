@@ -8,16 +8,20 @@ const ajv = new Ajv({ allErrors: true, $data: true })
 ajvErrors(ajv);
 addFormats(ajv);
 
-import wasteSchema from '../../schemas/waste_schema.json' with { type: 'json' };
 import manifestSchema from '../../schemas/manifest_schema.json' with { type: 'json' };
+import wasteSchema from '../../schemas/waste_schema.json' with { type: 'json' };
 import handlerBasicSchema from '../../schemas/handler_basic_schema.json' with {type: 'json'}
 import handlerFullSchema from '../../schemas/handler_full_schema.json' with {type: 'json'}
+
+const validateManifestSchema = ajv.compile(manifestSchema);
+const validateWasteSchema = ajv.compile(wasteSchema);
+const validateHandlerBasicSchema = ajv.compile(handlerBasicSchema);
+const validateHandlerFullSchema = ajv.compile(handlerFullSchema);
 
 const maxRows = 50 //const for maximum manifests per batch
 
 //manifest tab validation
 export function validateManifestInfo(manifests) {
-    const validate = ajv.compile(manifestSchema)
     const results = []
 
     //get count of distinct manifestId values
@@ -27,10 +31,9 @@ export function validateManifestInfo(manifests) {
         const errors = []
 
         //schema validation
-        const valid = validate(row)
+        const valid = validateManifestSchema(row)
         if (!valid) {
-            const schemaErrors = processSchemaErrors(validate.errors)
-            errors.push(...schemaErrors);
+            errors.push(...processSchemaErrors(validateManifestSchema.errors));
         }
 
         //duplicate manifestId validation
@@ -42,7 +45,7 @@ export function validateManifestInfo(manifests) {
         }
 
         //validate max number of rows allowed
-        if (index > maxRows - 1) {
+        if (index >= maxRows) {
             errors.push({
                 message: `cannot have more than ${maxRows} manifest rows in a file`
             });
@@ -59,18 +62,15 @@ export function validateManifestInfo(manifests) {
 
 //waste tab validation
 function validateWastes(wastes, validManifestIds) {
-
-    const validate = ajv.compile(wasteSchema)
     const results = []
 
     wastes.forEach((row, index) => {
         const errors = []
 
         //schema validation
-        const valid = validate(row)
+        const valid = validateWasteSchema(row)
         if (!valid) {
-            const schemaErrors = processSchemaErrors(validate.errors)
-            errors.push(...schemaErrors);
+            errors.push(...processSchemaErrors(validateWasteSchema.errors));
         }
 
         //manifestId validation
@@ -94,10 +94,10 @@ function validateWastes(wastes, validManifestIds) {
     })
 
     //validate at least one waste row for each manifestId from manifest tab
-    const checkMissingIds = validateManifestIds(validManifestIds, wastes)
+    const checkMissingIds = findMissingManifestIds(validManifestIds, wastes)
     if (checkMissingIds.length > 0) {
         checkMissingIds.forEach(id => {
-            results.push({ field: 'manifestId', message: `at least one waste row is required for manifestId ${id}` })
+            results.push({ row: null, errors: [{ field: 'manifestId', message: `at least one waste row is required for manifestId ${id}` }] })
         })
     }
 
@@ -106,7 +106,6 @@ function validateWastes(wastes, validManifestIds) {
 
 //handler tab- basic validation
 function validateHandlersBasic(handlers, validManifestIds) {
-    const validate = ajv.compile(handlerBasicSchema)
     let results = []
 
     //individual handler row validation
@@ -114,9 +113,9 @@ function validateHandlersBasic(handlers, validManifestIds) {
         const errors = []
 
         //schema validation
-        const valid = validate(row)
+        const valid = validateHandlerBasicSchema(row)
         if (!valid) {
-            const schemaErrors = processSchemaErrors(validate.errors)
+            const schemaErrors = processSchemaErrors(validateHandlerBasicSchema.errors)
             errors.push(...schemaErrors);
         }
 
@@ -142,10 +141,10 @@ function validateHandlersBasic(handlers, validManifestIds) {
     })
 
     //validate at least one handler per manifestId from manifest tab
-    const checkMissingIds = validateManifestIds(validManifestIds, handlers)
+    const checkMissingIds = findMissingManifestIds(validManifestIds, handlers)
     if (checkMissingIds.length > 0) {
         checkMissingIds.forEach(id => {
-            results.push({ field: 'manifestId', message: `at least one handler row is required for manifestId ${id}` })
+            results.push({ row: null, errors: [{ field: 'manifestId', message: `at least three handler rows (with Type: Generator, Transporter, DesignatedFacility) are required for manifestId ${id}` }] })
         })
     }
 
@@ -214,29 +213,23 @@ function validateHandlerTypes(handlers) {
     return results
 }
 
-//NEW- validate handlers rows for a group of individual manifest handlers
+//validate handlers - all columns
 function validateHandlersFull(handlers) {
-    try {
-        const validate = ajv.compile(handlerFullSchema)
-        const results = []
+    const results = []
 
-        handlers.forEach((handler) => {
-            const valid = validate(handler)
-            if (!valid) {
-                results.push({
-                    row: handler.rowNumber,
-                    errors: validate.errors.map(err => ({
-                        field: err.instancePath.substring(1) || err.params.missingProperty,
-                        message: err.message
-                    }))
-                })
-            }
-        })
-        return results
-    } catch (error) {
-        console.error(error)
-        return error
-    }
+    handlers.forEach((handler) => {
+        const valid = validateHandlerFullSchema(handler)
+        if (!valid) {
+            results.push({
+                row: handler.rowNumber,
+                errors: validateHandlerFullSchema.errors.map(err => ({
+                    field: err.instancePath.substring(1) || err.params?.missingProperty,
+                    message: err.message
+                }))
+            })
+        }
+    })
+    return results
 }
 
 /**SUPPORT FUNCTIONS */
@@ -251,7 +244,7 @@ function buildManifestIdFrequencyMap(manifests) {
     }, Object.create(null));
 }
 
-function validateManifestIds(manifestIds, tabData) {
+function findMissingManifestIds(manifestIds, tabData) {
     const tabManifestIds = new Set(tabData.map(row => row.manifestId))
     const missingIds = [...manifestIds].filter(id => !tabManifestIds.has(id))
 
